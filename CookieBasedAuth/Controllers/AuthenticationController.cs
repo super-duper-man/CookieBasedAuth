@@ -1,10 +1,14 @@
 ﻿using CookieBasedAuth.Data;
 using CookieBasedAuth.Models;
 using CookieBasedAuth.Models.Entities;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace CookieBasedAuth.Controllers
 {
@@ -22,6 +26,7 @@ namespace CookieBasedAuth.Controllers
         }
 
         [HttpPost("signup")]
+        [AllowAnonymous]
         public async Task<IActionResult> Signup(UserDto user)
         {
             var existsUser = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == user.Email);
@@ -42,6 +47,7 @@ namespace CookieBasedAuth.Controllers
         }
 
         [HttpPost("signin")]
+        [AllowAnonymous]
         public async Task<IActionResult> Signin(UserDto user)
         {
             {
@@ -52,8 +58,42 @@ namespace CookieBasedAuth.Controllers
                 }
 
                 var result = _passwordHasher.VerifyHashedPassword(user, _user.Password, user.Password);
-                return result == PasswordVerificationResult.Success ? Ok() : Unauthorized();
+
+                if (result == PasswordVerificationResult.Success)
+                {
+                    var claims = new List<Claim>
+                    {
+                        new Claim(ClaimTypes.Email, _user.Email),
+                        new Claim("UserId", _user.Id.ToString()),
+                    };
+
+                    var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                    var principal = new ClaimsPrincipal(identity);
+
+                    await HttpContext.SignInAsync(
+                        CookieAuthenticationDefaults.AuthenticationScheme,
+                        principal,
+                        new AuthenticationProperties
+                        {
+                            IsPersistent = true,
+                            ExpiresUtc = DateTime.UtcNow.AddMinutes(30)
+                        });
+
+                    return Ok("Signed in successfully");
+                }
+                else
+                {
+                    return BadRequest("Invalid creadentials");
+                }
             }
+        }
+
+        [HttpPost("signout")]
+        [Authorize]
+        public async Task<IActionResult> Signout()
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return Ok("Signed out successfully");
         }
     }
 }

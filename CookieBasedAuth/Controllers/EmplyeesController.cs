@@ -1,6 +1,7 @@
 ﻿using CookieBasedAuth.Data;
 using CookieBasedAuth.Models;
 using CookieBasedAuth.Models.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -9,6 +10,7 @@ namespace CookieBasedAuth.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class EmplyeesController : ControllerBase
     {
         private readonly AppDbContext dbContext;
