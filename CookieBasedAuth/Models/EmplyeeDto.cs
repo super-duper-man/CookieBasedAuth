@@ -1,6 +1,6 @@
 ﻿namespace CookieBasedAuth.Models
 {
-    public class AddEmployeeDto
+    public class EmployeeDto
     {
         public required string Name
         {

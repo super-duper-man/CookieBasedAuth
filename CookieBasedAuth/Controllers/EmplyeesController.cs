@@ -15,7 +15,7 @@ namespace CookieBasedAuth.Controllers
         public EmplyeesController(AppDbContext dbContext)
         {
             this.dbContext = dbContext;
-            }
+        }
 
         [HttpGet]
         public async Task<IActionResult> GetAllEmplyees()
@@ -25,8 +25,20 @@ namespace CookieBasedAuth.Controllers
             return Ok(employees);
         }
 
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetEmployeeByID(int id)
+        {
+            var employee = await dbContext.Employees.FindAsync(id);
+            if (employee == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(employee);
+        }
+
         [HttpPost]
-        public async Task<IActionResult> AddEmplyees(AddEmployeeDto addEmployeeDto)
+        public async Task<IActionResult> AddEmplyees(EmployeeDto addEmployeeDto)
         {
             var employeeEntity = new Employee()
             {
@@ -41,5 +53,44 @@ namespace CookieBasedAuth.Controllers
 
             return Ok(employeeEntity);
         }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateEmployee(int id, EmployeeDto employee)
+        {
+            var _employee = await dbContext.Employees.FindAsync(id);
+            if (_employee == null)
+            {
+                return NotFound();
+            }
+
+            await Task.Run(() => {
+                _employee.Email = employee.Email;
+                _employee.Name = employee.Name;
+                _employee.Phone = employee.Phone;
+                _employee.Salary = employee.Salary;
+            });
+
+            await dbContext.SaveChangesAsync();
+
+            return Ok(_employee);
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteEmployee(int id)
+        {
+            var employee = await dbContext.Employees.FindAsync(id);
+
+            if (employee == null)
+            {
+                return NotFound();
+            }
+
+            dbContext.Employees.Remove(employee);
+            await dbContext.SaveChangesAsync();
+
+            return Ok();
+        }
+
+
     }
 }
